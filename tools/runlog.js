@@ -9,8 +9,18 @@ import { join } from 'node:path'
 let file = process.argv[2]
 if (!file) {
   const dir = join(process.cwd(), 'runs')
-  const files = (await readdir(dir)).filter((f) => f.endsWith('.jsonl')).sort()
-  if (!files.length) { console.error('no runs yet'); process.exit(1) }
+  let files = []
+  try {
+    files = (await readdir(dir)).filter((f) => f.endsWith('.jsonl')).sort()
+  } catch {
+    console.log('\nNo calls have been made yet — runs/ appears once the server answers its first move.')
+    console.log('Put a key in .env, run npm run dev, press START, then try again.\n')
+    process.exit(0)
+  }
+  if (!files.length) {
+    console.log('\nruns/ is empty. Run npm run dev, press START, then try again.\n')
+    process.exit(0)
+  }
   file = join(dir, files.at(-1))
 }
 

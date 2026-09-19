@@ -36,21 +36,26 @@ Needs Node 22+. No dependencies, no build step, nothing to install. Two fonts
 load from Google Fonts at runtime (Press Start 2P and VT323); everything else
 is local.
 
-**Without an API key**, on mock answers — everything works, it just plays badly:
+Get a key from [typesafe.ai](https://typesafe.ai), then:
 
 ```bash
-npm run dev:mock             # -> http://localhost:5173
-```
-
-**For real**, with a key from [typesafe.ai](https://typesafe.ai):
-
-```bash
+git clone https://github.com/thelau/jev-tetris && cd jev-tetris
 cp .env.example .env         # put your TYPESAFE_API_KEY in it
 npm run dev                  # -> http://localhost:5173
 ```
 
-A game runs 60 to 130 seconds and costs about six cents. The key stays on the
-server; the browser never sees it.
+Open it and press START. Without a key there is no START button — the page says
+so rather than failing.
+
+A game costs a few cents and the server stops itself at 1500 calls or $1,
+whichever comes first. The key stays on the server; the browser never sees it.
+
+**No key?** Everything still runs on mock answers. The whole interface works, it
+just plays badly:
+
+```bash
+npm run dev:mock             # -> http://localhost:5173
+```
 
 | | |
 |---|---|
