@@ -11,7 +11,11 @@ const CHROME = process.env.CHROME_PATH
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function open({ url, width = 1440, height = 900, port = 9333, keepRendering = false }) {
+// A fixed debugging port makes two concurrent runs attach to each other's
+// browser, which fails in ways that look like application bugs.
+let nextPort = 9400 + Math.floor(Math.random() * 400)
+
+export async function open({ url, width = 1440, height = 900, port = nextPort++, keepRendering = false }) {
   const profile = await mkdtemp(join(tmpdir(), 'glow-'))
   const chrome = spawn(CHROME, [
     '--headless=new', '--hide-scrollbars', '--disable-gpu',

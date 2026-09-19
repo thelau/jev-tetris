@@ -1,24 +1,32 @@
 :root { color-scheme: dark; }
 
+/* The surround is darker than the cabinet and shares its hue: warm black, the
+   same value as flat black shifted a few degrees toward the gold. The only
+   gradient is the screen lighting the wall it stands against. */
 html, body {
   margin: 0;
   height: 100%;
-  background: #232323;
+  background: #17110d;
 }
 
 body {
   display: grid;
   place-items: center;
   overflow: hidden;
-  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+  padding: env(safe-area-inset-top, 0px) 14px env(safe-area-inset-bottom, 0px);
   box-sizing: border-box;
-  font: 400 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+  background:
+    radial-gradient(62% 46% at 50% 46%, rgba(200,160,74,0.10), rgba(0,0,0,0) 74%),
+    radial-gradient(130% 95% at 50% 44%, #1d1610 0%, #17110d 58%, #120d09 100%);
 }
 
 main { line-height: 0; }
 
 canvas {
   display: block;
-  cursor: default;
   touch-action: manipulation;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 0 90px rgba(200,170,110,0.07),
+    0 18px 60px rgba(0,0,0,0.6);
 }

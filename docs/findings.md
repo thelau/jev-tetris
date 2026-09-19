@@ -159,6 +159,18 @@ board has none — so it costs essentially nothing in tokens either.
 
 ## What did not work
 
+**Using the API's structured form.** TypeSafe document richer shapes than plain
+strings: `instructions` as an object with `question`, `focus` and `inspect`, and
+per-option criteria as `{what, not_for, examples}`. Rebuilding on those — with
+each of the five questions carrying only the clause it asks about, which also
+made the payload a third smaller — raised mean confidence from 0.41 to 0.47 and
+roughly halved the score: 127/35, 85/18, 82/17 against 155/46, 123/34, 200/76.
+Stripping the other four dimensions out of each question made most options
+textually identical within it, so each voice lost its ability to discriminate.
+The facts removed as distractors were doing the tie-breaking. The code is gone;
+the result is the point.
+
+
 **Multiplicative blending.** A weighted geometric mean should let any voice veto
 an option it hates. In practice the distributions are sparse — most options get
 exactly zero from most voices — so the product rewards options everyone finds

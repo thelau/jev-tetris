@@ -5,8 +5,7 @@
 //   node spike/play.js --player jev --pieces 40 --dump
 
 import { emptyBoard, enumeratePlacements, applyPlacement, columnHeights, countHoles, makeBag, LINE_SCORE, evaluate } from '../src/tetris.js'
-import { describeBoard, describePlacements, buildQuestions, blend, VOICES,
-         describeBoardV2, describePlacementsV2, buildQuestionsV2 } from '../src/describe.js'
+import { describeBoard, describePlacements, buildQuestions, blend, VOICES } from '../src/describe.js'
 import { heuristicPick, randomPick } from '../src/heuristic.js'
 import { wordsPick } from '../src/words.js'
 import { ask, readChoice, readScore, readNoul } from '../src/jev.js'
@@ -26,7 +25,6 @@ const dump = flag('dump')
 const bare = flag('bare') // drop the ambient questions, to isolate latency
 const mode = arg('mode', 'composite') // composite | single
 const blendMode = arg('blend', 'sum') // product | sum
-const api = arg('api', 'v1')          // v1 = flat strings, v2 = structured per-question
 const shuffle = flag('shuffle')   // control: permute the model's probabilities
 const uniform = flag('uniform')   // control: give every voice the same weight
 
@@ -34,17 +32,9 @@ let rndState = seed >>> 0
 const rand = () => ((rndState = (rndState * 1103515245 + 12345) >>> 0) / 4294967296)
 
 async function jevPick(board, placements, current, next, log) {
-  let state
-  let questions
-  if (api === 'v2') {
-    const { perVoice } = describePlacementsV2(board, placements)
-    state = describeBoardV2(board, current, next)
-    questions = buildQuestionsV2(perVoice)
-  } else {
-    const { criteria } = describePlacements(board, placements)
-    state = describeBoard(board, current, next)
-    questions = buildQuestions(criteria, mode)
-  }
+  const { criteria } = describePlacements(board, placements)
+  const state = describeBoard(board, current, next)
+  const questions = buildQuestions(criteria, mode)
   if (bare) { delete questions.danger; delete questions.doomed }
 
   const { raw, ms } = await ask({ state, questions })
@@ -126,7 +116,7 @@ async function run() {
   let score = 0
   let pieces = 0
 
-  console.log(`player=${player} api=${api}${shuffle ? ' SHUFFLED' : ''}${uniform ? ' UNIFORM' : ''} mode=${mode} blend=${blendMode} pieces=${maxPieces} seed=${seed}${bare ? ' bare' : ''}`)
+  console.log(`player=${player}${shuffle ? ' SHUFFLED' : ''}${uniform ? ' UNIFORM' : ''} mode=${mode} blend=${blendMode} pieces=${maxPieces} seed=${seed}${bare ? ' bare' : ''}`)
 
   while (pieces < maxPieces) {
     const placements = enumeratePlacements(board, current)

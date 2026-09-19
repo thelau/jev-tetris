@@ -46,15 +46,13 @@ try {
   page = await open({ url: URL, width: 1440, height: 900, keepRendering: true })
 
   console.log('\nloading')
-  check('page boots and exposes its state', !!(await page.json('window.__test.state()')))
+  // the module fetches three imports and two fonts; wait for it rather than guess
+  const booted = await until(async () => (await page.evaluate('typeof window.__test')) === 'object', 20000)
+  check('page boots and exposes its state', booted && !!(await page.json('window.__test.state()')))
 
   console.log('\nplaying')
   const moved = await until(async () => (await page.json('window.__test.state()')).pieces >= 2)
   check('the loop completes moves', moved, `${(await page.json('window.__test.state()')).pieces} pieces`)
-
-  await page.evaluate('window.__ui.why(true)')
-  check('a decision is recorded for inspection', await until(() => hasButton('close'), 10000))
-  await page.evaluate('window.__ui.why(false)')
 
   console.log('\nlayout — nothing may scroll, at any size')
   for (const [w, h] of [[1440, 900], [1280, 800], [820, 1180], [390, 844], [360, 640]]) {
@@ -70,12 +68,10 @@ try {
 
   console.log('\noverlays')
   await clickButton('help')
-  check('? opens the legend', await hasButton('close'))
+  check('HOW IT WORKS opens the panel', await hasButton('close'))
+  check('the strip stays live underneath', (await page.json('window.__test.state()')).showPanel === true)
   await clickButton('close')
   check('× closes it', !(await hasButton('close')))
-  await clickButton('why')
-  check('WHY opens the decision', await hasButton('close'))
-  await clickButton('close')
 
   console.log('\na broken connection is not a lost game')
   const before = (await page.json('window.__test.state()')).history
@@ -99,7 +95,7 @@ try {
   check('losing sets the end state', dead.dead === true && dead.phase === 'over')
   check('the round is recorded', dead.history === before + 1, `history ${dead.history}`)
   check('START is offered', await hasButton('start'))
-  check('the legend stays reachable after losing', await hasButton('help'))
+  check('HOW IT WORKS stays reachable after losing', await hasButton('help'))
 
   await clickButton('start')
   const restarted = await until(async () => {
@@ -128,7 +124,7 @@ try {
   console.log('\nconsole')
   check('no uncaught exceptions', page.errors.length === 0, page.errors.slice(0, 2).join(' | '))
 } catch (e) {
-  check('suite ran without throwing', false, e.message)
+  check('suite ran without throwing', false, `${e.message} :: ${(e.stack || '').split('\n')[1] || ''}`)
 } finally {
   page?.close()
   server.kill()

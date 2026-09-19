@@ -1,111 +1,115 @@
-// Capture every state of the interface into docs/stills/states/.
-// Real server for the normal states, throwaway mock servers for the failures.
+// Capture every state of the interface, at both ends of the size range, and
+// confirm the strip does not move between them.
 //
 //   node tools/states.js
 
 import { spawn } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile, rm } from 'node:fs/promises'
 import { open, sleep } from './cdp.js'
 
 const OUT = 'docs/stills/states'
-const DESKTOP = [1440, 900]
-const PHONE = [390, 844]
-const shots = []
+const SIZES = [['desktop', 1440, 900], ['phone', 360, 640]]
+const geo = {}
 
+await rm(OUT, { recursive: true, force: true })
 await mkdir(OUT, { recursive: true })
 
-async function grab(page, name, note) {
+const serve = (port, env) =>
+  spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: String(port), ...env }, stdio: 'ignore' })
+
+async function grab(page, name, label) {
+  await booted(page)
   const r = await page.send('Page.captureScreenshot', { format: 'png' })
-  await writeFile(`${OUT}/${name}.png`, Buffer.from(r.result.data, 'base64'))
-  shots.push({ name, note })
-  console.log(`  ${name}.png — ${note}`)
+  await writeFile(`${OUT}/${name}-${label}.png`, Buffer.from(r.result.data, 'base64'))
+  const s = await page.json('window.__test.state()')
+  ;(geo[label] ||= []).push({ name, stripTop: s.stripTop, strip: s.strip, header: s.header, cell: s.cell })
+  console.log(`  ${name}-${label}.png`)
 }
 
-async function waitFor(page, fn, ms = 60000) {
+// the module fetches three imports and two fonts before __test exists
+const booted = async (page, ms = 20000) => {
   const end = Date.now() + ms
   while (Date.now() < end) {
-    if (fn(await page.json('window.__test.state()'))) return true
-    await sleep(150)
+    if ((await page.evaluate('typeof window.__test')) === 'object') return true
+    await sleep(140)
   }
+  throw new Error('app never booted')
+}
+const until = async (page, fn, ms = 40000) => {
+  await booted(page)
+  const end = Date.now() + ms
+  while (Date.now() < end) { if (fn(await page.json('window.__test.state()'))) return true; await sleep(140) }
   return false
 }
 
-function serve(port, env) {
-  return spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: String(port), ...env }, stdio: 'ignore' })
-}
+for (const [label, w, h] of SIZES) {
+  const live = serve(5311, { GLOW_MOCK: '1' })
+  await sleep(1400)
 
-// ── real server: the states a visitor actually sees ──────────────────────────
-const real = serve(5301, {})
-await sleep(1500)
-const base = 'http://localhost:5301'
+  let page = await open({ url: 'http://localhost:5311', width: w, height: h, keepRendering: true })
+  await booted(page)
+  await sleep(700)
+  await grab(page, '1-attract', label)
+  page.close(); await sleep(300)
 
-for (const [label, [w, h]] of [['desktop', DESKTOP], ['phone', PHONE]]) {
-  let page = await open({ url: base, width: w, height: h, keepRendering: true, port: 9400 })
-  await sleep(1200)
-  await grab(page, `1-attract-${label}`, 'before anything is pressed')
-  page.close()
-  await sleep(400)
+  page = await open({ url: 'http://localhost:5311?hold=2500&auto=1', width: w, height: h, keepRendering: true })
+  await until(page, (s) => s.pieces >= 4)
 
-  page = await open({ url: `${base}?hold=2000&auto=1`, width: w, height: h, keepRendering: true, port: 9400 })
-  await waitFor(page, (s) => s.pieces >= 6)
+  await until(page, (s) => s.phase === 'thinking')
+  await sleep(120)
+  await grab(page, '2-waiting', label)
 
-  await waitFor(page, (s) => s.phase === 'thinking')
-  await sleep(200)
-  await grab(page, `2-waiting-${label}`, 'a call is in flight; the rule sweeps and MS counts up')
-
-  await waitFor(page, (s) => s.phase === 'field')
+  await until(page, (s) => s.phase === 'field')
   await sleep(500)
-  await grab(page, `3-decided-${label}`, 'the answer is back; the probability field is on the board')
+  await grab(page, '3-decided', label)
 
-  if (label === 'desktop') {
-    await page.evaluate('window.__ui.why(true)')
-    await sleep(400)
-    await grab(page, '4-panel-decision', 'every option, the model probabilities, and the cost')
-    await page.evaluate('window.__ui.why(false); window.__ui.help(true)')
-    await sleep(400)
-    await grab(page, '5-panel-legend', 'what everything on screen means')
-    await page.evaluate('window.__ui.help(false)')
-  }
+  await page.evaluate('window.__test.forceNearMiss()')
+  await sleep(150)
+  await grab(page, '4-near-miss', label)
+
+  await page.evaluate('window.__ui.help(true)')
+  await sleep(400)
+  await grab(page, '5-panel', label)
+  await page.evaluate('window.__ui.help(false)')
 
   await page.evaluate('window.__test.die()')
-  await sleep(600)
-  await grab(page, `6-lost-${label}`, 'the end screen, over the grey wall it built')
-  page.close()
-  await sleep(400)
+  await sleep(700)
+  await grab(page, '6-lost', label)
+  page.close(); live.kill(); await sleep(400)
+
+  const broken = serve(5312, { GLOW_MOCK: '1' })
+  await sleep(1400)
+  page = await open({ url: 'http://localhost:5312?hold=120&auto=1', width: w, height: h, keepRendering: true })
+  await until(page, (s) => s.pieces >= 2)
+  await fetch('http://localhost:5312/api/fail', { method: 'POST' })
+  await until(page, (s) => s.phase === 'stalled')
+  await sleep(300)
+  await grab(page, '7-no-answer', label)
+  page.close(); broken.kill(); await sleep(300)
+
+  const capped = serve(5313, { GLOW_MOCK: '1', GLOW_MAX_CALLS: '3' })
+  await sleep(1400)
+  page = await open({ url: 'http://localhost:5313?hold=120&auto=1', width: w, height: h, keepRendering: true })
+  await until(page, (s) => s.phase === 'stalled')
+  await sleep(300)
+  await grab(page, '8-no-budget', label)
+  page.close(); capped.kill(); await sleep(300)
+
+  const nokey = serve(5314, { TYPESAFE_API_KEY: '' })
+  await sleep(1400)
+  page = await open({ url: 'http://localhost:5314', width: w, height: h, keepRendering: true })
+  await sleep(1600)
+  await grab(page, '9-no-key', label)
+  page.close(); nokey.kill(); await sleep(300)
 }
-real.kill()
-await sleep(400)
 
-// ── failure states, on throwaway servers ─────────────────────────────────────
-const nokey = serve(5302, { TYPESAFE_API_KEY: '' })
-await sleep(1500)
-let page = await open({ url: 'http://localhost:5302', width: DESKTOP[0], height: DESKTOP[1], keepRendering: true, port: 9401 })
-await sleep(1500)
-await grab(page, '7-no-key', 'server has no API key; no START is offered')
-page.close()
-nokey.kill()
-await sleep(400)
-
-const broken = serve(5303, { GLOW_MOCK: '1' })
-await sleep(1500)
-page = await open({ url: 'http://localhost:5303?hold=120&auto=1', width: DESKTOP[0], height: DESKTOP[1], keepRendering: true, port: 9402 })
-await waitFor(page, (s) => s.pieces >= 3)
-await fetch('http://localhost:5303/api/fail', { method: 'POST' })
-await waitFor(page, (s) => s.phase === 'stalled')
-await sleep(400)
-await grab(page, '8-no-answer', 'the model did not reply; this is not a lost game')
-page.close()
-broken.kill()
-await sleep(400)
-
-const capped = serve(5304, { GLOW_MOCK: '1', GLOW_MAX_CALLS: '4' })
-await sleep(1500)
-page = await open({ url: 'http://localhost:5304?hold=120&auto=1', width: DESKTOP[0], height: DESKTOP[1], keepRendering: true, port: 9403 })
-await waitFor(page, (s) => s.phase === 'stalled')
-await sleep(400)
-await grab(page, '9-budget-reached', 'the spend limit stopped it')
-page.close()
-capped.kill()
-
-console.log(`\n${shots.length} states written to ${OUT}/`)
-process.exit(0)
+console.log('\nstrip identical across states?')
+let ok = true
+for (const [label, rows] of Object.entries(geo)) {
+  const a = rows[0]
+  const drift = rows.filter((r) => r.stripTop !== a.stripTop || r.strip !== a.strip || r.header !== a.header)
+  console.log(`  ${label.padEnd(8)} cell ${a.cell}  header ${a.header}  strip ${a.strip} at y=${a.stripTop}  ` +
+    (drift.length ? `MOVED in: ${drift.map((d) => d.name).join(', ')}` : `identical in all ${rows.length}`))
+  if (drift.length) ok = false
+}
+process.exit(ok ? 0 : 1)
