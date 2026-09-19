@@ -1,4 +1,4 @@
-import { COLS, ROWS, PIECES, emptyBoard, enumeratePlacements, applyPlacement, makeBag, LINE_SCORE } from '/src/tetris.js'
+import { COLS, ROWS, PIECES, emptyBoard, enumeratePlacements, applyPlacement, makeBag, spawnColumn, LINE_SCORE } from '/src/tetris.js'
 import { describeBoard, describePlacements, buildQuestions, blend, VOICES } from '/src/describe.js'
 import { begin as audioBegin, toggleMute, sfx } from '/audio.js'
 
@@ -292,19 +292,26 @@ function start() {
 // How far the piece has fallen while it waits: a row every 320ms, stopping
 // short of the stack. The answer arrives and it drops the rest of the way.
 function gateRowAt(t) {
-  if (!current) return 1
+  if (!current) return 0
   const m = PIECES[current][0]
-  const ox = Math.floor((COLS - m[0].length) / 2)
-  const wanted = 1 + Math.floor(Math.max(0, t - thinkingSince) / 320)
-  let r = 1
-  for (let cand = 1; cand <= Math.min(wanted, ROWS - m.length); cand++) {
-    let clear = true
-    for (let yy = 0; yy < m.length && clear; yy++) {
+  const ox = spawnColumn(current)
+  const free = (row) => {
+    for (let yy = 0; yy < m.length; yy++) {
       for (let xx = 0; xx < m[yy].length; xx++) {
-        if (m[yy][xx] && board?.[cand + yy]?.[ox + xx]) { clear = false; break }
+        if (!m[yy][xx]) continue
+        if (row + yy >= ROWS) return false
+        if (board?.[row + yy]?.[ox + xx]) return false
       }
     }
-    if (!clear) break
+    return true
+  }
+  // Start at the spawn row and only descend into space that is actually empty,
+  // so the waiting piece can never be drawn on top of the stack.
+  if (!free(0)) return 0
+  const wanted = Math.floor(Math.max(0, t - thinkingSince) / 320)
+  let r = 0
+  for (let cand = 1; cand <= wanted; cand++) {
+    if (!free(cand)) break
     r = cand
   }
   return r
@@ -434,11 +441,11 @@ function drawBoard(t) {
   // present but not yet placed. It leaves the moment a placement is chosen.
   if ((phase === 'thinking' || phase === 'idle') && current) {
     const m = PIECES[current][0]
-    const ox = Math.floor((COLS - m[0].length) / 2)
+    const ox = spawnColumn(current)
     gateRow = gateRowAt(t)
     for (let yy = 0; yy < m.length; yy++) {
       for (let xx = 0; xx < m[yy].length; xx++) {
-        if (m[yy][xx]) block(ox + xx, yy + gateRow, PIECE_COLOR[current] ?? C.ink2, 0.2)
+        if (m[yy][xx]) block(ox + xx, gateRow + yy, PIECE_COLOR[current] ?? C.ink2, 0.2)
       }
     }
   }

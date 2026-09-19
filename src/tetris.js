@@ -68,7 +68,11 @@ function collides(board, cells) {
 export function enumeratePlacements(board, type) {
   const rots = PIECES[type]
   const spawnX = Math.floor((COLS - rots[0][0].length) / 2)
-  const spawnY = -rots[0].length
+  // The piece spawns INSIDE the field, at the top rows — not in the space
+  // above it. Spawning above the ceiling meant a piece could always slide in
+  // somewhere, so the game never topped out and the waiting piece drew over
+  // the stack. If the spawn is blocked, the game is over; that is the rule.
+  const spawnY = 0
   const fits = (r, x, y) => !collides(board, cellsOf(rots[r], x, y))
   if (!fits(0, spawnX, spawnY)) return []
 
@@ -104,6 +108,14 @@ export function enumeratePlacements(board, type) {
   return [...locks.values()]
     .sort((a, b) => a.x - b.x || a.y - b.y || a.rot - b.rot)
     .map((p, i) => ({ id: `p${i}`, ...p }))
+}
+
+// Where a piece enters the field, so the renderer and the engine agree.
+export function spawnColumn(type) {
+  return Math.floor((COLS - PIECES[type][0][0].length) / 2)
+}
+export function spawnBlocked(board, type) {
+  return collides(board, cellsOf(PIECES[type][0], spawnColumn(type), 0))
 }
 
 // The old behaviour: straight drops only. Kept so the two can be compared.

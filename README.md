@@ -63,12 +63,19 @@ server; the browser never sees it.
 ## Tests
 
 ```bash
-npm test                     # 24 checks, mocked: no key, no cost
+npm test                     # both suites, no key and no cost
+npm run test:engine          # the game itself, no browser
+npm run test:ui              # the interface, headless, against a mocked model
 ```
 
-Drives the real page in headless Chrome: that it plays, that nothing scrolls at
-five viewport sizes, that the overlays open and close, that losing the connection
-stalls rather than ending the game, and that restart works.
+**`test:engine`** — 33 checks on the rules alone: that no placement ever overlaps
+or floats, that lines clear and everything above falls, that a blocked spawn ends
+the game, that the bag is fair and deterministic, and a 400-move game audited
+after every single move for cell-count drift.
+
+**`test:ui`** — drives the real page in headless Chrome: that it plays, that
+nothing scrolls at five sizes, that the panel opens and closes, that losing the
+connection stalls rather than ending the game, and that START begins a new round.
 
 ## Does JEV actually play it?
 
