@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "dev": "node server.js",
+    "dev:mock": "node server.js --mock",
     "start": "node server.js",
-    "mock": "node server.js --mock",
     "test": "node tools/e2e.js",
+    "states": "node tools/states.js",
+    "costs": "node tools/runlog.js",
     "play": "node spike/play.js --player jev --pieces 200",
     "control": "node spike/play.js --player jev --pieces 200 --shuffle",
     "baseline": "node spike/play.js --player words --pieces 200",
-    "ceiling": "node spike/play.js --player heuristic --pieces 200",
-    "costs": "node tools/runlog.js"
+    "ceiling": "node spike/play.js --player heuristic --pieces 200"
   }
 }

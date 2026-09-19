@@ -37,14 +37,14 @@ Needs Node 20+. No dependencies, no build step, nothing to install.
 **Without an API key**, on mock answers — everything works, it just plays badly:
 
 ```bash
-node server.js --mock        # -> http://localhost:5173
+npm run dev:mock             # -> http://localhost:5173
 ```
 
 **For real**, with a key from [typesafe.ai](https://typesafe.ai):
 
 ```bash
 cp .env.example .env         # put your TYPESAFE_API_KEY in it
-node server.js               # -> http://localhost:5173
+npm run dev                  # -> http://localhost:5173
 ```
 
 A game runs 60 to 130 seconds and costs about six cents. The key stays on the
@@ -61,7 +61,7 @@ server; the browser never sees it.
 ## Tests
 
 ```bash
-node tools/e2e.js            # 21 checks, mocked: no key, no cost
+npm test                     # 24 checks, mocked: no key, no cost
 ```
 
 Drives the real page in headless Chrome: that it plays, that nothing scrolls at
@@ -102,10 +102,11 @@ from the model. Replaying 1,578 logged turns, the blend's pick matches the
 one question.
 
 ```bash
-node spike/play.js --player jev --pieces 200            # the real thing
-node spike/play.js --player jev --pieces 200 --shuffle  # the honesty control
-node spike/play.js --player words --pieces 200          # the number to beat
-node spike/play.js --player heuristic --pieces 200      # the ceiling
+npm run play       # the real thing            (costs money)
+npm run control    # the honesty control       (costs money)
+npm run baseline   # the number to beat        (free)
+npm run ceiling    # the ceiling               (free)
+npm run costs      # what the last run spent   (free)
 ```
 
 - [docs/findings.md](docs/findings.md) — everything measured, including two things that did not work
