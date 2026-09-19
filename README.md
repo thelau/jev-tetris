@@ -83,11 +83,13 @@ Yes — and the controls matter more than the score, so they go first.
 
 | Player | Pieces (3 seeds) | Lines |
 |---|---|---|
-| Random | 26 · 19 · 22 | 0 · 0 · 0 |
-| **JEV, probabilities shuffled** | 26 · 22 · 25 | 0 · 0 · 0 |
-| **JEV as built** | 155 · 123 · 200 | 46 · 34 · 76 |
-| **Keyword lookup on the same sentences** | 200 · 200 · 200 | 78 · 78 · 79 |
-| El-Tetris heuristic | 200 · 200 · 200 | 77 · 75 · 78 |
+| Random | 20 · 21 · 22 | 0 · 0 · 0 |
+| **JEV, probabilities shuffled** | 24 · 18 · 18 | 0 · 0 · 0 |
+| **JEV as built** | 83 · 300 · 90 | 23 · 115 · 23 |
+| **Keyword table on the same sentences** | 300 · 210 · 300 | 118 · 73 · 118 |
+| El-Tetris heuristic | 300 · 300 · 300 | 118 · 118 · 116 |
+
+Measured after the spawn rule was corrected, cap 300 pieces.
 
 Keep the model's exact numbers and scramble only which option each belongs to,
 and play collapses to precisely random. So JEV's ranking is doing the work —
@@ -102,13 +104,12 @@ enough to play credible Tetris, far above random.** Not that JEV is good at Tetr
 
 Three further things an adversarial review confirmed, all of which cut against
 the project and all of which are in [docs/findings.md](docs/findings.md): three
-seeds cannot support a ratio like "60% of a heuristic" (the interval spans random
-to parity, so that claim was removed); the configuration was tuned on the same
-three seeds; and with the voices weighted equally the score collapses from ~52
-lines to ~12, so most of the scoring comes from weights we fitted rather than
-from the model. Replaying 1,578 logged turns, the blend's pick matches the
-`sealed` voice's own top choice 91% of the time — the "five voices" are close to
-one question.
+seeds cannot support a ratio (one seed matches the heuristic, two manage a fifth
+of it); the configuration was tuned on the same three seeds; and with the voices
+weighted equally the score collapses, so much of the scoring comes from weights
+we fitted rather than from the model. Replaying 1,578 logged turns, the blend's
+pick matches the `sealed` voice's own top choice 91% of the time — the "five
+voices" are close to one question.
 
 ```bash
 npm run play       # the real thing            (costs money)

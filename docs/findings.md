@@ -14,13 +14,18 @@ Three seeds, 200-piece cap, identical piece sequences for every player.
 
 | Player | Pieces survived | Lines cleared |
 |---|---|---|
-| Random | 26 · 19 · 22 | 0 · 0 · 0 |
-| **JEV** | **155 · 123 · 200** | **46 · 34 · 76** |
-| Heuristic (El-Tetris) | 200 · 200 · 200 | 77 · 75 · 78 |
+| Random | 20 · 21 · 22 | 0 · 0 · 0 |
+| **JEV** | **83 · 300 · 90** | **23 · 115 · 23** |
+| Heuristic (El-Tetris) | 300 · 300 · 300 | 118 · 118 · 116 |
 
-On seed 42 it cleared 76 lines against the heuristic's 78 and never topped out.
-On the other two it dies. Median latency ~380ms, so a game runs 60 to 130
-seconds and costs about six cents.
+On seed 21 it cleared 115 lines against the heuristic's 118 and never topped out
+inside the cap. On the other two it dies inside 90 pieces. Median latency
+~380ms, so a game runs anywhere from 35 seconds to four minutes.
+
+All of these were re-measured after the spawn rule was corrected: the piece used
+to enter from the space above the field, where it could always slide in
+somewhere, so no player ever topped out for the right reason. Every earlier
+number in this file's history is void.
 
 ## Is it really JEV playing? Three controls
 
@@ -28,12 +33,11 @@ Run these before believing anything above.
 
 | Player | Pieces | Lines | What it shows |
 |---|---|---|---|
-| Random | 26 · 19 · 22 | 0 · 0 · 0 | the floor |
-| **JEV, probabilities shuffled** | **26 · 22 · 25** | **0 · 0 · 0** | its ordering is carrying the whole game |
-| JEV, uniform voice weights | 63 · 84 · 54 | 10 · 18 · 7 | our weighting helps but is not the player |
-| **JEV as built** | **155 · 123 · 200** | **46 · 34 · 76** | |
-| **Keyword lookup on the same sentences** | **200 · 200 · 200** | **78 · 78 · 79** | the sentences already contain the answer |
-| El-Tetris heuristic | 200 · 200 · 200 | 77 · 75 · 78 | the ceiling |
+| Random | 20 · 21 · 22 | 0 · 0 · 0 | the floor |
+| **JEV, probabilities shuffled** | **24 · 18 · 18** | **0 · 0 · 0** | its ordering is carrying the whole game |
+| **JEV as built** | **83 · 300 · 90** | **23 · 115 · 23** | |
+| **Keyword table on the same sentences** | **300 · 210 · 300** | **118 · 73 · 118** | the sentences already contain the answer |
+| El-Tetris heuristic | 300 · 300 · 300 | 118 · 118 · 116 | the ceiling |
 
 **The shuffle control settles the honesty question.** Keep every number the model
 returned and scramble only which option each belongs to, and play drops to
@@ -56,10 +60,9 @@ Written after an adversarial review that reproduced the baselines and replayed
 the logs. Every point below survived that review.
 
 **Three seeds is not enough for a ratio.** Line counts against the heuristic run
-0.60, 0.45 and 0.97 — mean 0.67, sd 0.27, a 95% interval of roughly [0.01, 1.34].
-That spans "no better than random" to "matches the heuristic." Any single figure
-like "60% of a heuristic" is unsupported, and an earlier version of this document
-said exactly that. It has been removed.
+0.19, 0.97 and 0.20. One seed essentially matches a competent bot and two manage
+a fifth of it. No single figure describes that, and any attempt to quote one —
+an earlier version of this document said "60%" — is unsupported.
 
 **The configuration was selected on the same three seeds.** Bundled vs composite,
 sum vs product, the voice weights, the sentence rewrites — all chosen by watching
