@@ -1,4 +1,4 @@
-# Glow Tetris
+# JEV Tetris
 
 **A Tetris that a judgment model plays — where the interesting frame is the half second *before* the move.**
 

@@ -16,7 +16,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 let nextPort = 9400 + Math.floor(Math.random() * 400)
 
 export async function open({ url, width = 1440, height = 900, port = nextPort++, keepRendering = false }) {
-  const profile = await mkdtemp(join(tmpdir(), 'glow-'))
+  const profile = await mkdtemp(join(tmpdir(), 'jev-'))
   const chrome = spawn(CHROME, [
     '--headless=new', '--hide-scrollbars', '--disable-gpu',
     `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, 'about:blank',

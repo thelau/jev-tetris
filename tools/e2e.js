@@ -36,7 +36,7 @@ async function until(fn, ms = 15000, every = 150) {
 }
 
 const server = spawn(process.execPath, ['server.js'], {
-  env: { ...process.env, GLOW_MOCK: '1', PORT: String(PORT) },
+  env: { ...process.env, JEV_MOCK: '1', PORT: String(PORT) },
   stdio: 'ignore',
 })
 await sleep(1200)

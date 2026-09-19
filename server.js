@@ -23,8 +23,8 @@ const TYPES = {
 const USD_PER_INPUT_TOKEN = 0.042 / 1e6
 // Hard ceiling. The browser cannot be trusted not to loop, and a tab left open
 // overnight is the expensive failure mode. Enforced here because the key is here.
-const MAX_CALLS = Number(process.env.GLOW_MAX_CALLS || 1500)
-const MAX_USD = Number(process.env.GLOW_MAX_USD || 1)
+const MAX_CALLS = Number(process.env.JEV_MAX_CALLS || 1500)
+const MAX_USD = Number(process.env.JEV_MAX_USD || 1)
 const RUN = new Date().toISOString().replace(/[:.]/g, '-')
 const LOG = join(process.cwd(), 'runs', `${RUN}.jsonl`)
 const total = { calls: 0, inputTokens: 0, outputTokens: 0, usd: 0, model: null }
@@ -38,7 +38,7 @@ async function record(entry) {
 
 // Mock mode: answer in the real response shape without calling the API, so
 // the test suite and anyone forking this can run it with no key and no cost.
-const MOCK = process.env.GLOW_MOCK === '1' || process.argv.includes('--mock')
+const MOCK = process.env.JEV_MOCK === '1' || process.argv.includes('--mock')
 let mockFails = false
 
 function mockAnswer(body) {
@@ -89,7 +89,7 @@ const server = createServer(async (req, res) => {
       total.outputTokens += payload.usage.output_tokens
       total.usd = total.inputTokens * USD_PER_INPUT_TOKEN
       total.model = payload.model
-      payload._glow = { ms: 1, cumulative: { ...total } }
+      payload._meta = { ms: 1, cumulative: { ...total } }
       res.writeHead(200, { 'content-type': 'application/json' })
       res.end(JSON.stringify(payload))
       return
@@ -132,7 +132,7 @@ const server = createServer(async (req, res) => {
       })
 
       if (payload) {
-        payload._glow = { ms, cumulative: { ...total } }
+        payload._meta = { ms, cumulative: { ...total } }
         res.writeHead(upstream.status, { 'content-type': 'application/json' })
         res.end(JSON.stringify(payload))
       } else {
@@ -186,7 +186,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   if (MOCK) console.log('MOCK MODE — no API calls, no cost')
   else if (!process.env.TYPESAFE_API_KEY) console.warn('warning: no TYPESAFE_API_KEY in .env')
-  console.log(`glow tetris  →  http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`)
+  console.log(`jev-tetris   →  http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`)
   console.log(`run log      →  runs/${RUN}.jsonl`)
   console.log(`budget       →  ${MAX_CALLS} calls or $${MAX_USD}, whichever comes first`)
 })

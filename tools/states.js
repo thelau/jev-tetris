@@ -43,7 +43,7 @@ const until = async (page, fn, ms = 40000) => {
 }
 
 for (const [label, w, h] of SIZES) {
-  const live = serve(5311, { GLOW_MOCK: '1' })
+  const live = serve(5311, { JEV_MOCK: '1' })
   await sleep(1400)
 
   let page = await open({ url: 'http://localhost:5311', width: w, height: h, keepRendering: true })
@@ -77,7 +77,7 @@ for (const [label, w, h] of SIZES) {
   await grab(page, '6-lost', label)
   page.close(); live.kill(); await sleep(400)
 
-  const broken = serve(5312, { GLOW_MOCK: '1' })
+  const broken = serve(5312, { JEV_MOCK: '1' })
   await sleep(1400)
   page = await open({ url: 'http://localhost:5312?hold=120&auto=1', width: w, height: h, keepRendering: true })
   await until(page, (s) => s.pieces >= 2)
@@ -87,7 +87,7 @@ for (const [label, w, h] of SIZES) {
   await grab(page, '7-no-answer', label)
   page.close(); broken.kill(); await sleep(300)
 
-  const capped = serve(5313, { GLOW_MOCK: '1', GLOW_MAX_CALLS: '3' })
+  const capped = serve(5313, { JEV_MOCK: '1', JEV_MAX_CALLS: '3' })
   await sleep(1400)
   page = await open({ url: 'http://localhost:5313?hold=120&auto=1', width: w, height: h, keepRendering: true })
   await until(page, (s) => s.phase === 'stalled')

@@ -119,11 +119,17 @@ let history = loadHistory()
 let fontsReady = false
 
 function loadHistory() {
-  try { return JSON.parse(localStorage.getItem('glow.history') || '[]') } catch { return [] }
+  try {
+    const now = localStorage.getItem('jev.history')
+    if (now) return JSON.parse(now)
+    const old = localStorage.getItem('glow.history')   // scores from before the rename
+    if (old) { localStorage.setItem('jev.history', old); localStorage.removeItem('glow.history'); return JSON.parse(old) }
+    return []
+  } catch { return [] }
 }
 function remember(r) {
   history = [r, ...history].slice(0, 40)
-  try { localStorage.setItem('glow.history', JSON.stringify(history)) } catch {}
+  try { localStorage.setItem('jev.history', JSON.stringify(history)) } catch {}
 }
 const best = () => history.reduce((m, r) => Math.max(m, r.score), 0)
 
@@ -159,7 +165,7 @@ async function askForMove(placements) {
   if (raw.budget) { budgetStop = raw.error; throw new Error(raw.error) }
   if (!res.ok) throw new Error(raw.error || `server returned ${res.status}`)
   if (raw.error) throw new Error(raw.error)
-  if (raw._glow) meta = { model: raw.model ?? raw._glow.cumulative.model, ...raw._glow.cumulative }
+  if (raw._meta) meta = { model: raw.model ?? raw._meta.cumulative.model, ...raw._meta.cumulative }
 
   const ids = placements.map((p) => p.id)
   const dists = {}
