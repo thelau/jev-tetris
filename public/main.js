@@ -110,6 +110,10 @@ let lastMs = 0, lastConf = 0, thinkingSince = 0, dropFrom = 0
 let gateRow = 1
 let optionCount = 0, chosenId = null, chosenShare = 0, nearMiss = false, nearMissAt = 0
 let meta = null, netError = null, budgetStop = null
+// The server counts for its whole life, which is the right number to keep but
+// the wrong one to show: a new round would open holding the last one's bill.
+// The strip shows this round; the panel shows the session.
+let roundCostBase = 0
 let started = false, ready = null, hidden = document.hidden
 let showPanel = false
 let hitboxes = []
@@ -289,6 +293,7 @@ async function step() {
 }
 
 function start() {
+  roundCostBase = meta?.usd ?? 0
   started = true
   audioBegin()
   reset()
@@ -620,7 +625,7 @@ function drawStrip(t) {
   const blinkOn = !s.blink || Math.floor(t / 550) % 2 === 0
   put(s.hr, R, hy, blinkOn ? s.hrInk : C.ink0, 'right')
 
-  const costText = `$${(meta?.usd ?? 0).toFixed(3)}`
+  const costText = `$${Math.max(0, (meta?.usd ?? 0) - roundCostBase).toFixed(3)}`
   if (!minimal() && !tight()) {
     type(VT, 0.54 * sv, 400, 0.1)
     put(costText, R, y0 + 2.73 * sv, C.ink2, 'right')
@@ -669,7 +674,7 @@ const PANEL = [
   ['#N · N%', "which way it took, numbered left to right, and that way's share of the field. 80% knew; 20% is a coin toss between look-alikes."],
   ['DIM BLOCKS', 'how sure it was when it placed them. The wall is a record of its doubt.'],
   ['MS', 'how long the model took. The piece falls a row at a time while it reads, then drops the rest of the way the moment the answer lands. This is the tempo.'],
-  ['$', 'what the session has cost so far, in real money.'],
+  ['$', 'what this round has cost, in real money. The total for the whole session is at the foot of this panel.'],
 ]
 
 function wrap(text, maxW) {
@@ -727,7 +732,8 @@ function drawPanel() {
   ctx.fillStyle = '#2f2f2f'
   ctx.fillRect(p, footRule, G.W - 2 * p, 1)
   type(VT, sz(13), 400, 0.08)
-  put(`${(meta?.model ?? 'JEV').toUpperCase()} · WEIGHTS OURS, PROBABILITIES ITS`, p, footRule + Math.round(14 * k), C.ink1)
+  const session = meta ? `${meta.calls} CALLS · $${meta.usd.toFixed(3)} THIS SESSION · ` : ''
+  put(`${(meta?.model ?? 'JEV').toUpperCase()} · ${session}WEIGHTS OURS, PROBABILITIES ITS`, p, footRule + Math.round(14 * k), C.ink1)
 }
 
 // ── CRT ──────────────────────────────────────────────────────────────────────
