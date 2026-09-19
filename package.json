@@ -1,0 +1,17 @@
+{
+  "name": "glow-tetris",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node server.js --mock",
+    "test": "node tools/e2e.js",
+    "play": "node spike/play.js --player jev --pieces 200",
+    "control": "node spike/play.js --player jev --pieces 200 --shuffle",
+    "baseline": "node spike/play.js --player words --pieces 200",
+    "ceiling": "node spike/play.js --player heuristic --pieces 200",
+    "costs": "node tools/runlog.js"
+  }
+}

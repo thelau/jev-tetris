@@ -1,0 +1,24 @@
+:root { color-scheme: dark; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #232323;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  font: 400 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+main { line-height: 0; }
+
+canvas {
+  display: block;
+  cursor: default;
+  touch-action: manipulation;
+}
