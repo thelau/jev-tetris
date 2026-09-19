@@ -39,6 +39,9 @@ async function record(entry) {
 // Mock mode: answer in the real response shape without calling the API, so
 // the test suite and anyone forking this can run it with no key and no cost.
 const MOCK = process.env.JEV_MOCK === '1' || process.argv.includes('--mock')
+// The real model takes ~380ms. Mock answers are instant, which makes the
+// waiting state impossible to see or photograph, so it can be faked.
+const MOCK_DELAY = Number(process.env.JEV_MOCK_DELAY || 0)
 let mockFails = false
 
 function mockAnswer(body) {
@@ -82,6 +85,7 @@ const server = createServer(async (req, res) => {
     let body = ''
     for await (const chunk of req) body += chunk
     if (MOCK) {
+      if (MOCK_DELAY) await new Promise((r) => setTimeout(r, MOCK_DELAY))
       if (mockFails) { res.writeHead(503, { 'content-type': 'application/json' }); res.end('{"error":"mock failure"}'); return }
       const payload = mockAnswer(JSON.parse(body))
       total.calls++

@@ -105,6 +105,10 @@ const labelTrack = () => (G.W < 330 ? 0.1 : 0.16)
 // ── state ────────────────────────────────────────────────────────────────────
 let board, bag, current, next, score, lines, pieces, dead
 let field = null, cellField = null, chosen = null, runnerUp = null
+// The code finds the ways before the call goes out, so they are on the board
+// while the model reads them — flat, all equally possible. The answer then
+// re-weights the same cells.
+let offered = null
 let phase = 'boot', phaseStart = 0, gen = 0
 let lastMs = 0, lastConf = 0, thinkingSince = 0, dropFrom = 0
 let gateRow = 1
@@ -140,7 +144,7 @@ const best = () => history.reduce((m, r) => Math.max(m, r.score), 0)
 function blank() {
   board = emptyBoard()
   score = 0; lines = 0; pieces = 0; dead = false
-  field = null; cellField = null; chosen = null; runnerUp = null
+  field = null; cellField = null; chosen = null; runnerUp = null; offered = null
   optionCount = 0; chosenId = null; chosenShare = 0; nearMiss = false
 }
 function reset() {
@@ -228,6 +232,8 @@ async function step() {
   const placements = enumeratePlacements(board, current)
   if (placements.length === 0) { die(); return }
   optionCount = placements.length
+  offered = new Set()
+  for (const pl of placements) for (const [x, y] of pl.cells) if (y >= 0) offered.add(`${x},${y}`)
 
   while (hidden && !stale()) { setPhase('idle'); await wait(400) }
   if (stale()) return
@@ -280,7 +286,7 @@ async function step() {
   lines += cleared
   score += LINE_SCORE[cleared]
   pieces++
-  cellField = null; field = null
+  cellField = null; field = null; offered = null
   cleared ? sfx.clear(cleared) : sfx.lock()
 
   setPhase('settle')
@@ -445,6 +451,15 @@ function drawBoard(t) {
     for (let x = 0; x < COLS; x++) {
       const c = board?.[y]?.[x]
       if (c) block(x, y, PIECE_COLOR[c.type] ?? C.ink2, c.conf)
+    }
+  }
+
+  // Laid out by the code, before anyone has an opinion about them.
+  if ((phase === 'thinking' || phase === 'idle') && offered) {
+    ctx.fillStyle = 'rgba(200,200,255,0.075)'
+    for (const k of offered) {
+      const [x, y] = k.split(',').map(Number)
+      ctx.fillRect(x * G.cell, boardTop() + y * G.cell, G.cell, G.cell)
     }
   }
 
@@ -668,13 +683,13 @@ function drawStrip(t) {
 // ── the one panel ────────────────────────────────────────────────────────────
 const PANEL = [
   ['', 'The code finds every way the piece can be manoeuvred into a resting place and writes each one out as an English sentence. JEV reads the sentences and points at one. It never sees the board, or a single number.'],
-  ['THE GLOW', 'how much of its wanting rests on each cell. Brighter = more of the field agrees.'],
+  ['THE GLOW', 'every way the code found, flat while the model reads them, then lit by how much of its wanting rests on each cell. Brighter = more of the field agrees.'],
   ['WHITE RING', 'the placement it took.'],
   ['DOTTED RING', 'the one it nearly took instead. About one move in eight.'],
   ['#N · N%', "which way it took, numbered left to right, and that way's share of the field. 80% knew; 20% is a coin toss between look-alikes."],
   ['DIM BLOCKS', 'how sure it was when it placed them. The wall is a record of its doubt.'],
   ['MS', 'how long the model took. The piece falls a row at a time while it reads, then drops the rest of the way the moment the answer lands. This is the tempo.'],
-  ['$', 'what this round has cost, in real money. The total for the whole session is at the foot of this panel.'],
+  ['$', 'what this round has cost, in real money.'],
 ]
 
 function wrap(text, maxW) {
@@ -732,8 +747,7 @@ function drawPanel() {
   ctx.fillStyle = '#2f2f2f'
   ctx.fillRect(p, footRule, G.W - 2 * p, 1)
   type(VT, sz(13), 400, 0.08)
-  const session = meta ? `${meta.calls} CALLS · $${meta.usd.toFixed(3)} THIS SESSION · ` : ''
-  put(`${(meta?.model ?? 'JEV').toUpperCase()} · ${session}WEIGHTS OURS, PROBABILITIES ITS`, p, footRule + Math.round(14 * k), C.ink1)
+  put(`${(meta?.model ?? 'JEV').toUpperCase()} · WEIGHTS OURS, PROBABILITIES ITS`, p, footRule + Math.round(14 * k), C.ink1)
 }
 
 // ── CRT ──────────────────────────────────────────────────────────────────────

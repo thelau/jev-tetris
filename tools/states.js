@@ -43,7 +43,7 @@ const until = async (page, fn, ms = 40000) => {
 }
 
 for (const [label, w, h] of SIZES) {
-  const live = serve(5311, { JEV_MOCK: '1' })
+  const live = serve(5311, { JEV_MOCK: '1', JEV_MOCK_DELAY: '1400' })
   await sleep(1400)
 
   let page = await open({ url: 'http://localhost:5311', width: w, height: h, keepRendering: true })
